@@ -45,6 +45,7 @@ urlpatterns = [
     re_path(r"^api/v1/instance/?$", views.instance_info),
     re_path(r"^api/v1/instance/peers/?$", views.peers),
     re_path(r"^opensearch.xml$", views.opensearch, name="opensearch"),
+    re_path(r"^ostatus_subscribe/?$", views.ostatus_follow_request),
     # polling updates
     re_path("^api/updates/notifications/?$", views.get_notification_count),
     re_path("^api/updates/stream/(?P<stream>[a-z]+)/?$", views.get_unread_status_count),
@@ -238,7 +239,41 @@ urlpatterns = [
     re_path(r"^search/?$", views.Search.as_view(), name="search"),
     # imports
     re_path(r"^import/?$", views.Import.as_view(), name="import"),
-    re_path(r"^import/(\d+)/?$", views.ImportStatus.as_view(), name="import-status"),
+    re_path(
+        r"^import/(?P<job_id>\d+)/?$",
+        views.ImportStatus.as_view(),
+        name="import-status",
+    ),
+    re_path(
+        r"^import/(?P<job_id>\d+)/retry/(?P<item_id>\d+)/?$",
+        views.retry_item,
+        name="import-item-retry",
+    ),
+    re_path(
+        r"^import/(?P<job_id>\d+)/failed/?$",
+        views.ImportTroubleshoot.as_view(),
+        name="import-troubleshoot",
+    ),
+    re_path(
+        r"^import/(?P<job_id>\d+)/review/?$",
+        views.ImportManualReview.as_view(),
+        name="import-review",
+    ),
+    re_path(
+        r"^import/(?P<job_id>\d+)/review/?$",
+        views.ImportManualReview.as_view(),
+        name="import-review",
+    ),
+    re_path(
+        r"^import/(?P<job_id>\d+)/review/(?P<item_id>\d+)/approve/?$",
+        views.approve_import_item,
+        name="import-approve",
+    ),
+    re_path(
+        r"^import/(?P<job_id>\d+)/review/(?P<item_id>\d+)/delete/?$",
+        views.delete_import_item,
+        name="import-delete",
+    ),
     # users
     re_path(rf"{USER_PATH}\.json$", views.User.as_view()),
     re_path(rf"{USER_PATH}/?$", views.User.as_view(), name="user-feed"),
@@ -417,5 +452,10 @@ urlpatterns = [
     re_path(r"^unfollow/?$", views.unfollow, name="unfollow"),
     re_path(r"^accept-follow-request/?$", views.accept_follow_request),
     re_path(r"^delete-follow-request/?$", views.delete_follow_request),
+    re_path(r"^ostatus_follow/?$", views.remote_follow, name="remote-follow"),
+    re_path(r"^remote_follow/?$", views.remote_follow_page, name="remote-follow-page"),
+    re_path(
+        r"^ostatus_success/?$", views.ostatus_follow_success, name="ostatus-success"
+    ),
     path("__debug__/", include(debug_toolbar.urls)),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

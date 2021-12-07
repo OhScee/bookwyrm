@@ -1,6 +1,7 @@
 """ test for app action functionality """
 from unittest.mock import patch
-from django.contrib.auth.models import Group, Permission
+
+from django.contrib.auth.models import AnonymousUser, Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.template.response import TemplateResponse
@@ -44,6 +45,8 @@ class AuthorViews(TestCase):
             parent_work=self.work,
         )
 
+        self.anonymous_user = AnonymousUser
+        self.anonymous_user.is_authenticated = False
         models.SiteSettings.objects.create()
 
     def test_author_page(self):
@@ -51,15 +54,33 @@ class AuthorViews(TestCase):
         view = views.Author.as_view()
         author = models.Author.objects.create(name="Jessica")
         request = self.factory.get("")
+        request.user = self.local_user
         with patch("bookwyrm.views.author.is_api_request") as is_api:
             is_api.return_value = False
             result = view(request, author.id)
         self.assertIsInstance(result, TemplateResponse)
         validate_html(result.render())
         self.assertEqual(result.status_code, 200)
+
+    def test_author_page_logged_out(self):
+        """there are so many views, this just makes sure it LOADS"""
+        view = views.Author.as_view()
+        author = models.Author.objects.create(name="Jessica")
+        request = self.factory.get("")
+        request.user = self.anonymous_user
+        with patch("bookwyrm.views.author.is_api_request") as is_api:
+            is_api.return_value = False
+            result = view(request, author.id)
+        self.assertIsInstance(result, TemplateResponse)
+        validate_html(result.render())
         self.assertEqual(result.status_code, 200)
 
+    def test_author_page_api_response(self):
+        """there are so many views, this just makes sure it LOADS"""
+        view = views.Author.as_view()
+        author = models.Author.objects.create(name="Jessica")
         request = self.factory.get("")
+        request.user = self.local_user
         with patch("bookwyrm.views.author.is_api_request") as is_api:
             is_api.return_value = True
             result = view(request, author.id)
@@ -78,7 +99,6 @@ class AuthorViews(TestCase):
         self.assertIsInstance(result, TemplateResponse)
         validate_html(result.render())
         self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.status_code, 200)
 
     def test_edit_author(self):
         """edit an author"""
@@ -91,7 +111,7 @@ class AuthorViews(TestCase):
         request = self.factory.post("", form.data)
         request.user = self.local_user
 
-        with patch("bookwyrm.models.activitypub_mixin.broadcast_task.delay"):
+        with patch("bookwyrm.models.activitypub_mixin.broadcast_task.apply_async"):
             view(request, author.id)
         author.refresh_from_db()
         self.assertEqual(author.name, "New Name")
@@ -126,5 +146,5 @@ class AuthorViews(TestCase):
         resp = view(request, author.id)
         author.refresh_from_db()
         self.assertEqual(author.name, "Test Author")
-        resp.render()
+        validate_html(resp.render())
         self.assertEqual(resp.status_code, 200)
