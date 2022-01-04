@@ -5,7 +5,6 @@ from uuid import uuid4
 from django import template
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
-from django.template.defaultfilters import stringfilter
 from django.templatetags.static import static
 
 
@@ -16,6 +15,12 @@ register = template.Library()
 def get_uuid(identifier):
     """for avoiding clashing ids when there are many forms"""
     return f"{identifier}{uuid4()}"
+
+
+@register.simple_tag(takes_context=False)
+def join(*args):
+    """concatenate an arbitary set of values"""
+    return "_".join(str(a) for a in args)
 
 
 @register.filter(name="username")
@@ -98,10 +103,3 @@ def get_isni(existing, author, autoescape=True):
                 f'<input type="text" name="isni-for-{author.id}" value="{isni}" hidden>'
             )
     return ""
-
-
-@register.filter(name="remove_spaces")
-@stringfilter
-def remove_spaces(arg):
-    """Removes spaces from argument passed in"""
-    return re.sub(r"\s", "", str(arg))
