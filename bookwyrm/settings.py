@@ -28,6 +28,9 @@ EMAIL_SENDER_NAME = env("EMAIL_SENDER_NAME", "admin")
 EMAIL_SENDER_DOMAIN = env("EMAIL_SENDER_NAME", DOMAIN)
 EMAIL_SENDER = f"{EMAIL_SENDER_NAME}@{EMAIL_SENDER_DOMAIN}"
 
+# error reporting via email
+ADMINS = env("ADMINS", [])
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOCALE_PATHS = [
